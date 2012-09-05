@@ -1,7 +1,6 @@
 import settings
 
 import json
-import oauth2 as oauth
 import requests
 import urllib
 import urlparse
@@ -93,6 +92,7 @@ def setup():
                 is_stored = True
         return render_template('setup.html', trello_user=trello_user,
                                is_stored=is_stored)
+
 
 if __name__ == '__main__':
     app.run()
