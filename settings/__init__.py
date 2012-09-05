@@ -8,6 +8,7 @@ SECRET_KEY = None
 SQLALCHEMY_DATABASE_URI = 'sqlite:///trello-mailgun.db'
 TRELLO_API_KEY = None
 TRELLO_API_SECRET = None
+MAILGUN_API_KEY = None
 
 
 # Settings from ENV
@@ -20,14 +21,6 @@ for key in _locals.keys():
         value = environ.get(key)
         if value:
             _locals[key] = value
-
-
-# Settings from python file
-
-try:
-    from production import *
-except ImportError:
-    pass
 
 
 # Settings from AppFog

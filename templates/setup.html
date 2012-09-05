@@ -6,14 +6,16 @@
     <style>
         body { background-color: silver; margin: 40px; padding: 0; }
         body, input { font: 14px/1.5 Capriola, sans-serif; color: #333; }
-        h1, h2, h3 { margin: 0 }
+        h1, h2, h3, h4 { margin: 0 }
         h1, h2 { line-height: 2; }
         h1 { font-size: 200%; }
         h2 { font-size: 150%; border-bottom: 1px #ddd solid; }
         h3 { font-size: 125%; }
+        h4 { font-size: 100%; }
         section { background-color: white; width: 320px; padding: 20px; margin: 0 auto; border-radius: 5px; box-shadow: 0 2px 0 rgba(0, 0, 0, 0.5); }
         input[type=submit] { background-color: forestgreen; color: white; border-radius: 5px; border: 0; border-bottom: 2px darkgreen solid; }
         .message { width: 320px; padding: 10px 20px; margin: 20px auto; background-color: gold; border-radius: 3px; border-bottom: 2px goldenrod solid; }
+        ul { list-style: none; padding-left: 20px; margin: 0; }
     </style>
 </head>
 <body>
@@ -34,7 +36,27 @@
                 {{ request.form.email }}
             </p>
             {% else %}
-                <input id="email" name="email" type="email">
+                <input id="email" name="email" type="email" value="{{ request.form.email }}">
+            </p>
+            <p>
+                <h3>List</h3>
+            {% for trello_board in trello_boards %}
+                {% with organization = trello_board.organization %}
+                <h4>{% if organization %}{{ organization.name }}/{% endif %}{{ trello_board.name }}</h4>
+                {% endwith %}
+                <ul>
+                {% for trello_list in trello_board.lists %}
+                    <li>
+                        <input type="radio" name="list_id" value="{{ trello_list.id }}"
+                            {% if trello_list.id == request.form.list_id %}
+                            checked="checked"
+                            {% endif %}
+                            >
+                        {{ trello_list.name }}
+                    </li>
+                {% endfor %}
+                </ul>
+            {% endfor %}
             </p>
             <p>
                 <input type="submit" value="Submit">

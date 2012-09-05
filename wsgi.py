@@ -1,6 +1,5 @@
 import settings
 
-import json
 import re
 import requests
 import urllib
@@ -10,9 +9,11 @@ from flask import (Flask, url_for, redirect, request, session, render_template,
                    flash, abort, Response)
 from flask_sqlalchemy import SQLAlchemy
 from oauth_hook import OAuthHook
+from requests.auth import HTTPBasicAuth
 from sqlalchemy.dialects.mysql import VARCHAR
 
 TRELLO_API_ENDPOINT = 'https://trello.com/1/%s'
+MAILGUN_API_ENDPOINT = 'https://api.mailgun.net/v2/%s'
 TRELLO_SCOPES = 'read,write'
 EMAIL_PAT = re.compile('<?(\w+@[^@>]+)>?$')
 
@@ -35,6 +36,7 @@ class User(db.Model):
     email = db.Column(VARCHAR(255))
     oauth_token = db.Column(VARCHAR(255))
     oauth_token_secret = db.Column(VARCHAR(255))
+    route_id = db.Column(VARCHAR(255))
 
 
 @app.route('/setup', methods=['GET', 'POST'])
@@ -60,7 +62,7 @@ def setup():
                         urllib.urlencode(params))
     else:
         # Get access token
-        request_token = session.get('request_token')
+        request_token = session['request_token']
         oauth_hook = OAuthHook(
             access_token=request_token['oauth_token'],
             access_token_secret=request_token['oauth_token_secret'],
@@ -76,24 +78,44 @@ def setup():
             access_token_secret=access_token['oauth_token_secret'],
             **consumer)
         trello_client = requests.session(hooks={'pre_request': oauth_hook})
-        response = trello_client.get('https://trello.com/1/members/me')
-        trello_user = json.loads(response.content)
+        trello_user = (trello_client.get(TRELLO_API_ENDPOINT % 'members/me')
+                       .json)
+        # Get lists
+        trello_boards = trello_client.get(TRELLO_API_ENDPOINT %
+            'members/me/boards?filter=open&organization=true&lists=open').json
         # Store user info
         is_stored = False
         if request.method == 'POST':
-            if not request.form.get('email'):
+            email = request.form.get('email')
+            list_id = request.form.get('list_id')
+            if not email:
                 flash("We need your email")
+            elif not list_id:
+                flash("Select a list to add your cards to")
             else:
+                data = {
+                    'expression': 'match_header("From", ".*%s")' % email,
+                    'action': 'forward("%s")' % url_for('create_card',
+                                                        list_id=list_id,
+                                                        _external=True),
+                }
+                route = (requests.post(MAILGUN_API_ENDPOINT % 'routes',
+                         data=data,
+                         auth=HTTPBasicAuth('api', settings.MAILGUN_API_KEY))
+                         .json['route'])
                 # Store user details
                 db.session.add(User(
                     id=trello_user['id'],
-                    email=request.form['email'],
+                    email=email,
                     oauth_token=access_token['oauth_token'],
-                    oauth_token_secret=access_token['oauth_token_secret']))
+                    oauth_token_secret=access_token['oauth_token_secret'],
+                    route_id=route['id']))
                 db.session.commit()
+                session.pop('request_token')
                 flash("You're done!")
                 is_stored = True
         return render_template('setup.html', trello_user=trello_user,
+                               trello_boards=trello_boards,
                                is_stored=is_stored)
 
 
@@ -124,8 +146,7 @@ def create_card(list_id):
         'desc': request.form['body-plain'],
         'idList': list_id,
     }
-    response = trello_client.post(TRELLO_API_ENDPOINT % 'cards', data=data)
-    card = json.loads(response.content)
+    card = trello_client.post(TRELLO_API_ENDPOINT % 'cards', data=data).json
     # Add members from cc addresses
     for cc in request.form['Cc'].split(','):
         email = _get_email(cc)
