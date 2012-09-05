@@ -56,7 +56,7 @@ def setup():
             'name': 'Trello-Mailgun',
             'expiration': 'never',
         }
-        return redirect(TRELLO_API_ENDPOINT % 'OAuthGetRequestToken' + '?' +
+        return redirect(TRELLO_API_ENDPOINT % 'OAuthAuthorizeToken' + '?' +
                         urllib.urlencode(params))
     else:
         # Get access token
@@ -67,7 +67,7 @@ def setup():
             **consumer)
         trello_client = requests.session(hooks={'pre_request': oauth_hook})
         response = trello_client.post(
-            TRELLO_API_ENDPOINT % 'OAuthGetRequestToken',
+            TRELLO_API_ENDPOINT % 'OAuthGetAccessToken',
             data={'oauth_verifier': oauth_verifier})
         access_token = dict(urlparse.parse_qsl(response.content))
         # Get user details
