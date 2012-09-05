@@ -105,7 +105,7 @@ def _get_email(s):
         return
 
 
-@app.route('/create_card/<list_id>')
+@app.route('/create_card/<list_id>', methods=['POST'])
 def create_card(list_id):
     # Get user
     email = _get_email(request.form['From'])
