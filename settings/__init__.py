@@ -1,3 +1,5 @@
+import json
+
 from os import environ
 
 
@@ -26,3 +28,17 @@ try:
     from production import *
 except ImportError:
     pass
+
+
+# Settings from AppFog
+
+services = json.loads(environ.get('VCAP_SERVICES', '{}'))
+service = services.get('mysql-5.1')
+if service:
+    credentials = service.pop()['credentials']
+    SQLALCHEMY_DATABASE_URI = 'mysql://%s:%s@%s:%s/%s' % (
+        credentials['username'],
+        credentials['password'],
+        credentials['hostname'],
+        credentials['port'],
+        credentials['name'])
