@@ -111,7 +111,7 @@ def create_card(list_id):
     email = _get_email(request.form['From'])
     if not email:
         abort(400)
-    user = User.filter_by(email=email).first_or_404()
+    user = User.query.filter_by(email=email).first_or_404()
     # Set trello client
     oauth_hook = OAuthHook(
         access_token=user.oauth_token,
@@ -131,7 +131,7 @@ def create_card(list_id):
         email = _get_email(cc)
         if not email:
             continue
-        cc_user = User.filter_by(email=email).first()
+        cc_user = User.query.filter_by(email=email).first()
         if not cc_user:
             continue
         data = {
