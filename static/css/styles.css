@@ -1,0 +1,70 @@
+body {
+    margin: 40px;
+    padding: 0;
+    background-color: #eef;
+}
+
+body, input, select {
+    color: #333;
+    font: 14px/1.5 Capriola, sans-serif;
+}
+
+input, select {
+    border: 1px silver solid;
+    line-height: 1.5;
+}
+
+h1 {
+    border-bottom: 1px #ddd solid;
+}
+
+#signed-in {
+    float: right;
+    color: silver;
+}
+
+#signed-in img {
+    vertical-align: middle;
+}
+
+section {
+    margin: 0 auto;
+    padding: 20px;
+    width: 480px;
+    border-radius: 5px;
+    background-color: white;
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.5);
+}
+
+input[type=submit],
+input[type=button] {
+    border: 0;
+    border-bottom: 2px solid;
+    border-radius: 5px;
+}
+
+input[type=submit] {
+    background-color: forestgreen;
+    border-bottom-color: darkgreen;
+    color: white;
+}
+
+input[type=button] {
+    background-color: silver;
+    border-bottom-color: gray;
+    color: #333;
+}
+
+.message {
+    margin: 20px auto;
+    padding: 10px 20px;
+    width: 320px;
+    border-bottom: 2px goldenrod solid;
+    border-radius: 5px;
+    background-color: gold;
+}
+
+ul {
+    padding-left: 10px;
+    list-style: none;
+}

@@ -3,20 +3,10 @@
 <head>
     <title>Trello-Mailgun</title>
     <link href="http://fonts.googleapis.com/css?family=Capriola" rel="stylesheet">
-    <style>
-        body { background-color: silver; margin: 40px; padding: 0; }
-        body, input { font: 14px/1.5 Capriola, sans-serif; color: #333; }
-        h1, h2, h3, h4 { margin: 0 }
-        h1, h2 { line-height: 2; }
-        h1 { font-size: 200%; }
-        h2 { font-size: 150%; border-bottom: 1px #ddd solid; }
-        h3 { font-size: 125%; }
-        h4 { font-size: 100%; }
-        section { background-color: white; width: 320px; padding: 20px; margin: 0 auto; border-radius: 5px; box-shadow: 0 2px 0 rgba(0, 0, 0, 0.5); }
-        input[type=submit] { background-color: forestgreen; color: white; border-radius: 5px; border: 0; border-bottom: 2px darkgreen solid; }
-        .message { width: 320px; padding: 10px 20px; margin: 20px auto; background-color: gold; border-radius: 3px; border-bottom: 2px goldenrod solid; }
-        ul { list-style: none; padding-left: 20px; margin: 0; }
-    </style>
+    <link href="/static/css/normalize.css" rel="stylesheet">
+    <link href="/static/css/styles.css" rel="stylesheet">
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.8.0/jquery.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/json2/20110223/json2.js"></script>
 </head>
 <body>
     {% for message in get_flashed_messages() %}
@@ -24,12 +14,11 @@
     {% endfor %}
     <section>
         <h1>Trello-Mailgun</h1>
+        <div id="signed-in">
+            Signed in as {{ trello_user.fullName }} <img src="https://trello-avatars.s3.amazonaws.com/{{ trello_user.avatarHash }}/30.png">
+        </div>
         <h2>Setup</h2>
         <form method="post">
-            <p>
-                <h3>{{ trello_user.fullName }}</h3>
-                <img src="https://trello-avatars.s3.amazonaws.com/{{ trello_user.avatarHash }}/170.png">
-            </p>
             <p>
                 <h3><label for="email">Email</label></h3>
             {% if is_stored %}
@@ -39,30 +28,101 @@
                 <input id="email" name="email" type="email" value="{{ request.form.email }}">
             </p>
             <p>
-                <h3>List</h3>
-            {% for trello_board in trello_boards %}
-                {% with organization = trello_board.organization %}
-                <h4>{% if organization %}{{ organization.name }}/{% endif %}{{ trello_board.name }}</h4>
-                {% endwith %}
-                <ul>
-                {% for trello_list in trello_board.lists %}
-                    <li>
-                        <input type="radio" name="list_id" value="{{ trello_list.id }}"
-                            {% if trello_list.id == request.form.list_id %}
-                            checked="checked"
-                            {% endif %}
-                            >
-                        {{ trello_list.name }}
-                    </li>
-                {% endfor %}
-                </ul>
-            {% endfor %}
+                <h3>Lists</h3>
+                <ul id="lists"></ul>
+                <p>
+                    <input type="text" class="keyword" placeholder="List keyword">
+                    <select class="list">
+                        <option value="">Select a list</option>
+                    {% for trello_board in trello_boards %}
+                        {% with organization = trello_board.organization %}
+                        <optgroup label="{% if organization %}{{ organization.name }}/{% endif %}{{ trello_board.name }}">
+                        {% endwith %}
+                        {% for trello_list in trello_board.lists %}
+                            <option value="{{ trello_list.id }}"
+                                {% if trello_list.id == request.form.list_id %}
+                                selected="selected"
+                                {% endif %}
+                                >
+                                {{ trello_list.name }}
+                            </option>
+                        {% endfor %}
+                        </optgroup>
+                    {% endfor %}
+                    </select>
+                    <input type="button" class="add" value="+">
+                </p>
             </p>
             <p>
-                <input type="submit" value="Submit">
+                <input type="submit" value="Save">
             </p>
             {% endif %}
         </form>
     </section>
+    <script>
+        $((App = {
+            setAddListHandler: function() {
+                $('.add').on('click', function() {
+                    var $this = $(this);
+                    var $option = $('option:selected', $this.siblings('.list'));
+                    var keyword = $this.siblings('.keyword').val();
+                    // No keyword dupes
+                    if ($('.keyword:contains(' + keyword + ')').size() > 0) {
+                        return;
+                    }
+                    var list = $.trim($option.parent('optgroup').attr('label'));
+                    if (list) list += '/';
+                    list += $.trim($option.text());
+                    var listID = $this.siblings('.list').val();
+                    var $el = $('<li/>');
+                    $el.attr('id', listID);
+                    $el.html(' &rarr; ' + list + ' ');
+                    var $keyword = $('<span class="keyword"/>').text(keyword);
+                    $el.prepend($keyword);
+                    var $remove = $('<input type="button" class="remove" value="&times;">');
+                    $remove.on('click', function() {
+                        $(this).parent('li').remove();
+                    });
+                    $el.append($remove);
+                    $('#lists').append($el);
+                });
+            },
+            setSubmitHandler: function() {
+                $('form').on('submit', function(e) {
+                    e.preventDefault();
+                    $('.message').remove();
+                    var data = {
+                        email: $('form input[name=email]').val(),
+                        lists: []
+                    };
+                    $('#lists li').each(function() {
+                        var $this = $(this);
+                        data.lists.push({
+                            keyword: $('.keyword', $this).text(),
+                            list_id: $this.attr('id')
+                        });
+                    });
+                    $.ajax({
+                        url: '/setup',
+                        type: 'post',
+                        dataType: 'json',
+                        contentType: 'application/json',
+                        data: JSON.stringify(data)
+                    }).fail(function(xhr) {
+                        var response = JSON.parse(xhr.responseText);
+                        $('body').prepend($('<div/>').addClass('message').html(response.error));
+                    }).done(function(xhr, response) {
+                        $('body').prepend($('<div/>').addClass('message').html("You're done!"));
+                    });
+
+
+                });
+            },
+            init: function() {
+                App.setAddListHandler();
+                App.setSubmitHandler();
+            }
+        }).init);
+    </script>
 </body>
 </html>
