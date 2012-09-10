@@ -174,7 +174,7 @@ def create_card(trello_user_id):
                 .json)
         cards.append(card)
         # Add members from cc addresses
-        for cc in request.form['Cc'].split(','):
+        for cc in request.form.get('Cc', '').split(','):
             email = _get_email(cc)
             if not email:
                 continue
