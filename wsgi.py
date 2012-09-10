@@ -144,7 +144,7 @@ def _get_email(s):
 @app.route('/create_card/<trello_user_id>', methods=['POST'])
 def create_card(trello_user_id):
     # Get user
-    user = User.query.get(_get_email(request.form['From']), trello_user_id)
+    user = User.query.get((_get_email(request.form['From']), trello_user_id))
     if not user:
         abort(404)
     # Get lists
