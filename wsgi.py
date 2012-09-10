@@ -110,7 +110,7 @@ def setup():
             data = {
                 'expression': 'match_header("From", ".*%s")' % email,
                 'action': 'forward("%s")' % url_for('create_card',
-                    trello_user_id=trello_user['id'], _external=True),
+                    trello_id=trello_user['id'], _external=True),
             }
             route = (requests.post(MAILGUN_API_ENDPOINT % 'routes',
                      data=data, auth=auth).json['route'])
@@ -141,10 +141,10 @@ def _get_email(s):
         return
 
 
-@app.route('/create_card/<trello_user_id>', methods=['POST'])
-def create_card(trello_user_id):
+@app.route('/create_card/<trello_id>', methods=['POST'])
+def create_card(trello_id):
     # Get user
-    user = User.query.get((_get_email(request.form['From']), trello_user_id))
+    user = User.query.get((_get_email(request.form['From']), trello_id))
     if not user:
         abort(404)
     # Get lists
@@ -182,7 +182,7 @@ def create_card(trello_user_id):
             if not cc_user:
                 continue
             data = {
-                'value': cc_user.id,
+                'value': cc_user.trello_id,
             }
             trello_client.post(
                 TRELLO_API_ENDPOINT % 'cards/%s/members' % card['id'],
