@@ -1,64 +1,51 @@
-<!doctype html>
-<html>
-<head>
-    <title>Trello-Mailgun</title>
-    <link href="http://fonts.googleapis.com/css?family=Capriola" rel="stylesheet">
-    <link href="/static/css/normalize.css" rel="stylesheet">
-    <link href="/static/css/styles.css" rel="stylesheet">
-    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.8.0/jquery.min.js"></script>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/json2/20110223/json2.js"></script>
-</head>
-<body>
-    {% for message in get_flashed_messages() %}
-    <div class="message">{{ message }}</div>
-    {% endfor %}
-    <section>
-        <h1>Trello-Mailgun</h1>
-        <div id="signed-in">
-            Signed in as {{ trello_user.fullName }} <img src="https://trello-avatars.s3.amazonaws.com/{{ trello_user.avatarHash }}/30.png">
-        </div>
-        <h2>Setup</h2>
-        <form method="post">
-            <p>
-                <h3><label for="email">Email</label></h3>
-            {% if is_stored %}
-                {{ request.form.email }}
-            </p>
-            {% else %}
-                <input id="email" name="email" type="email" value="{{ request.form.email }}">
-            </p>
-            <p>
-                <h3>Lists</h3>
-                <ul id="lists"></ul>
-                <p>
-                    <input type="text" class="keyword" placeholder="List keyword">
-                    <select class="list">
-                        <option value="">Select a list</option>
-                    {% for trello_board in trello_boards %}
-                        {% with organization = trello_board.organization %}
-                        <optgroup label="{% if organization %}{{ organization.name }}/{% endif %}{{ trello_board.name }}">
-                        {% endwith %}
-                        {% for trello_list in trello_board.lists %}
-                            <option value="{{ trello_list.id }}"
-                                {% if trello_list.id == request.form.list_id %}
-                                selected="selected"
-                                {% endif %}
-                                >
-                                {{ trello_list.name }}
-                            </option>
-                        {% endfor %}
-                        </optgroup>
-                    {% endfor %}
-                    </select>
-                    <input type="button" class="add" value="+">
-                </p>
-            </p>
-            <p>
-                <input type="submit" value="Save">
-            </p>
-            {% endif %}
-        </form>
-    </section>
+{% extends "base.html" %}
+{% block content %}
+<div id="signed-in">
+    Signed in as {{ trello_user.fullName }} <img src="https://trello-avatars.s3.amazonaws.com/{{ trello_user.avatarHash }}/30.png">
+</div>
+<h2>Setup</h2>
+<form method="post">
+    <p>
+        <h3><label for="email">Email</label></h3>
+        <input id="email" name="email" type="email" value="{{ email }}">
+    </p>
+    <p>
+        <h3>Lists</h3>
+        <ul id="lists">
+        {% for trello_list in trello_lists %}
+            <li id="{{ trello_list.list_id }}">
+                <span class="keyword">{{ trello_list.keyword }}</span>
+                &rarr; {{ trello_list.list_name }}
+                <input type="button" class="remove" value="&times;">
+            </li>
+        {% endfor %}
+        </ul>
+        <p>
+            <input type="text" class="keyword" placeholder="List keyword">
+            <select class="list">
+                <option value="">Select a list</option>
+            {% for trello_board in trello_boards %}
+                {% with organization = trello_board.organization %}
+                <optgroup label="{% if organization %}{{ organization.name }}/{% endif %}{{ trello_board.name }}">
+                {% endwith %}
+                {% for trello_list in trello_board.lists %}
+                    <option value="{{ trello_list.id }}">
+                        {{ trello_list.name }}
+                    </option>
+                {% endfor %}
+                </optgroup>
+            {% endfor %}
+            </select>
+            <input type="button" class="add" value="+">
+        </p>
+    </p>
+    <p>
+        <input type="submit" value="Save">
+    </p>
+</form>
+{% endblock %}
+
+{% block js %}
     <script>
         $((App = {
             setAddListHandler: function() {
@@ -80,27 +67,27 @@
                     var $keyword = $('<span class="keyword"/>').text(keyword);
                     $el.prepend($keyword);
                     var $remove = $('<input type="button" class="remove" value="&times;">');
-                    $remove.on('click', function() {
-                        $(this).parent('li').remove();
-                    });
                     $el.append($remove);
                     $('#lists').append($el);
+                });
+                $('#lists').on('click', '.remove', function() {
+                    $(this).parent('li').remove();
                 });
             },
             setSubmitHandler: function() {
                 $('form').on('submit', function(e) {
                     e.preventDefault();
+                    var $saveButton = $(this).find('input[type=submit]');
+                    $saveButton.val('Saving...').prop('disabled', true);
                     $('.message').remove();
                     var data = {
                         email: $('form input[name=email]').val(),
-                        lists: []
+                        lists: {}
                     };
                     $('#lists li').each(function() {
                         var $this = $(this);
-                        data.lists.push({
-                            keyword: $('.keyword', $this).text(),
-                            list_id: $this.attr('id')
-                        });
+                        data.lists[$this.attr('id')] = $('.keyword', $this)
+                            .text();
                     });
                     $.ajax({
                         url: '/setup',
@@ -112,10 +99,11 @@
                         var response = JSON.parse(xhr.responseText);
                         $('body').prepend($('<div/>').addClass('message').html(response.error));
                     }).done(function(xhr, response) {
-                        $('body').prepend($('<div/>').addClass('message').html("You're done!"));
+                        $('body').prepend($('<div/>').addClass('message')
+                            .html("Saved!"));
+                    }).always(function() {
+                        $saveButton.val('Save').prop('disabled', false);
                     });
-
-
                 });
             },
             init: function() {
@@ -124,5 +112,4 @@
             }
         }).init);
     </script>
-</body>
-</html>
+{% endblock %}

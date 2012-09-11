@@ -49,6 +49,10 @@ input[type=submit] {
     color: white;
 }
 
+input[type=submit]:disabled {
+    color: darkgreen;
+}
+
 input[type=button] {
     background-color: silver;
     border-bottom-color: gray;

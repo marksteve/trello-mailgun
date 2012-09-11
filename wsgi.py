@@ -84,7 +84,7 @@ def setup():
         session['access_token'] = dict(urlparse.parse_qsl(response.content))
         return redirect(url_for('setup'))
 
-    # Get user details
+    # Get Trello user details
     oauth_hook = OAuthHook(
         access_token=access_token['oauth_token'],
         access_token_secret=access_token['oauth_token_secret'],
@@ -92,9 +92,27 @@ def setup():
     trello_client = requests.session(hooks={'pre_request': oauth_hook})
     trello_user = (trello_client.get(TRELLO_API_ENDPOINT % 'members/me')
                    .json)
-    # Get lists
+    # Get boards
     trello_boards = trello_client.get(TRELLO_API_ENDPOINT %
         'members/me/boards?filter=open&organization=true&lists=open').json
+    # Get user if exists
+    user = User.query.filter_by(trello_id=trello_user['id']).first()
+    email = user.email if user else ''
+    trello_lists = []
+    if user:
+        curr_trello_lists = json.loads(user.trello_lists)
+        for trello_board in trello_boards:
+            board_name = trello_board['name']
+            organization = trello_board.get('organization')
+            if organization:
+                board_name = organization['name'] + '/' + board_name
+            for trello_list in trello_board.get('lists', []):
+                if trello_list['id'] in curr_trello_lists:
+                    trello_lists.append({
+                        'list_id': trello_list['id'],
+                        'keyword': curr_trello_lists[trello_list['id']],
+                        'list_name': board_name + '/' + trello_list['name'],
+                    })
     # Store user info
     if request.method == 'POST':
         email = request.json.get('email')
@@ -104,24 +122,35 @@ def setup():
         elif not trello_lists:
             return jsonify({'error': "You need to add at least one list"}), 400
         else:
-            # Add route
-            # FIXME: Handle exceptions
-            auth = HTTPBasicAuth('api', settings.MAILGUN_API_KEY)
-            data = {
-                'expression': 'match_header("From", ".*%s")' % email,
-                'action': 'forward("%s")' % url_for('create_card',
-                    trello_id=trello_user['id'], _external=True),
-            }
-            route = (requests.post(MAILGUN_API_ENDPOINT % 'routes',
-                     data=data, auth=auth).json['route'])
-            # Store user details
-            user = User(
-                email=email,
-                trello_id=trello_user['id'],
-                trello_lists=json.dumps(trello_lists),
-                trello_oauth_token=access_token['oauth_token'],
-                trello_oauth_token_secret=access_token['oauth_token_secret'],
-                mailgun_route_id=route['id'])
+            if user:
+                user.email = email
+                user.trello_id = trello_user['id']
+                user.trello_lists = json.dumps(trello_lists)
+                user.trello_oauth_token = access_token['oauth_token']
+                user.trello_oauth_token_secret = (
+                    access_token['oauth_token_secret']
+                )
+            else:
+                # Add route
+                # FIXME: Handle exceptions
+                auth = HTTPBasicAuth('api', settings.MAILGUN_API_KEY)
+                data = {
+                    'expression': 'match_header("From", ".*%s")' % email,
+                    'action': 'forward("%s")' % url_for('create_card',
+                        trello_id=trello_user['id'], _external=True),
+                }
+                route = (requests.post(MAILGUN_API_ENDPOINT % 'routes',
+                         data=data, auth=auth).json['route'])
+                # Store user details
+                user = User(
+                    email=email,
+                    trello_id=trello_user['id'],
+                    trello_lists=json.dumps(trello_lists),
+                    trello_oauth_token=access_token['oauth_token'],
+                    trello_oauth_token_secret=(
+                        access_token['oauth_token_secret']
+                    ),
+                    mailgun_route_id=route['id'])
             db.session.add(user)
             # Save
             db.session.commit()
@@ -130,7 +159,8 @@ def setup():
             session.pop('access_token')
             return jsonify(user.to_dict())
     return render_template('setup.html', trello_user=trello_user,
-                           trello_boards=trello_boards)
+                           trello_boards=trello_boards, user=user, email=email,
+                           trello_lists=trello_lists)
 
 
 def _get_email(s):
@@ -150,11 +180,11 @@ def create_card(trello_id):
     # Get lists
     subject = request.form['Subject']
     trello_lists = json.loads(user.trello_lists)
-    matched_lists = []
-    for trello_list in trello_lists:
-        if trello_list['keyword'] in subject:
-            matched_lists.append(trello_list)
-    if not matched_lists:
+    trello_list_ids = []
+    for list_id, keyword in trello_lists.items():
+        if keyword in subject:
+           trello_list_ids.append(list_id)
+    if not trello_list_ids:
         abort(404)
     # Set trello client
     oauth_hook = OAuthHook(
@@ -164,11 +194,11 @@ def create_card(trello_id):
     trello_client = requests.session(hooks={'pre_request': oauth_hook})
     # Create cards
     cards = []
-    for trello_list in matched_lists:
+    for list_id in trello_list_ids:
         data = {
             'name': subject,
             'desc': request.form['body-plain'],
-            'idList': trello_list['list_id'],
+            'idList': list_id,
         }
         card = (trello_client.post(TRELLO_API_ENDPOINT % 'cards', data=data)
                 .json)
