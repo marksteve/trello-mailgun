@@ -1,4 +1,4 @@
 # TODO
 
-* Setup editing
 * Add attachments to card
+* Error handling
