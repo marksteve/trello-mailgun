@@ -1,4 +1,4 @@
 # Trello-Mailgun
 
-Create Trello cards using Mailgun mailboxes
+Trello cards thru email using Mailgun mailboxes
 
