@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 {% block content %}
 <div id="signed-in">
-    Signed in as {{ trello_user.fullName }} <img src="https://trello-avatars.s3.amazonaws.com/{{ trello_user.avatarHash }}/30.png">
+    <img src="https://trello-avatars.s3.amazonaws.com/{{ trello_user.avatarHash }}/30.png"> {{ trello_user.fullName }}
+    <a class="button" href="{{ url_for('change_user') }}">Switch user</a>
 </div>
 <h2>Setup</h2>
 <form method="post">

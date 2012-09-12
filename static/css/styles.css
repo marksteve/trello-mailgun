@@ -9,11 +9,6 @@ body, input, select {
     font: 14px/1.5 Capriola, sans-serif;
 }
 
-input, select {
-    border: 1px silver solid;
-    line-height: 1.5;
-}
-
 a {
     color: forestgreen;
 }
@@ -22,13 +17,33 @@ h1 {
     border-bottom: 1px #ddd solid;
 }
 
-input[type=submit],
-input[type=button] {
+input, select {
+    border: 1px silver solid;
+}
+
+.button {
+    text-decoration: none;
+}
+
+.button, input, select {
+    line-height: 1.5;
+}
+
+.button,
+input[type=button],
+input[type=submit] {
+    display: inline-block;
+    padding: 0 5px;
     border: 0;
     border-radius: 5px;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
     color: white;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.button,
+input[type=button] {
+    background-color: silver;
 }
 
 input[type=submit] {
@@ -37,10 +52,6 @@ input[type=submit] {
 
 input[type=submit]:disabled {
     color: darkgreen;
-}
-
-input[type=button] {
-    background-color: silver;
 }
 
 img {

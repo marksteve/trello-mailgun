@@ -222,5 +222,12 @@ def create_card(trello_id):
     return jsonify({'cards': cards})
 
 
+@app.route('/change_user')
+def change_user():
+    session.pop('request_token')
+    session.pop('access_token')
+    return redirect(url_for('setup'))
+
+
 if __name__ == '__main__':
     app.run()
