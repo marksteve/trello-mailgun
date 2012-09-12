@@ -21,8 +21,8 @@
         {% endfor %}
         </ul>
         <p>
-            <input type="text" class="keyword" placeholder="List keyword">
-            <select class="list">
+            <input type="text" id="keyword" placeholder="List keyword">
+            <select id="list">
                 <option value="">Select a list</option>
             {% for trello_board in trello_boards %}
                 {% with organization = trello_board.organization %}
@@ -51,16 +51,25 @@
             setAddListHandler: function() {
                 $('.add').on('click', function() {
                     var $this = $(this);
-                    var $option = $('option:selected', $this.siblings('.list'));
-                    var keyword = $this.siblings('.keyword').val();
+                    var keyword = $this.siblings('#keyword').val();
+                    var listID = $this.siblings('#list').val();
+                    if (!(keyword && listID)) {
+                        return;
+                    }
+                    var $option = $('option:selected', $this.siblings('#list'));
                     // No keyword dupes
-                    if ($('.keyword:contains(' + keyword + ')').size() > 0) {
+                    var hasDupe = false;
+                    $('.keyword').each(function() {
+                        if ($(this).text() == keyword) {
+                            hasDupe = true;
+                        }
+                    });
+                    if (hasDupe) {
                         return;
                     }
                     var list = $.trim($option.parent('optgroup').attr('label'));
                     if (list) list += '/';
                     list += $.trim($option.text());
-                    var listID = $this.siblings('.list').val();
                     var $el = $('<li/>');
                     $el.attr('id', listID);
                     $el.html(' &rarr; ' + list + ' ');
