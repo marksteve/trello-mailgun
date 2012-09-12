@@ -154,9 +154,6 @@ def setup():
             db.session.add(user)
             # Save
             db.session.commit()
-            # Clear session
-            session.pop('request_token')
-            session.pop('access_token')
             return jsonify(user.to_dict())
     return render_template('setup.html', trello_user=trello_user,
                            trello_boards=trello_boards, user=user, email=email,
