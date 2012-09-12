@@ -1,7 +1,7 @@
 body {
     margin: 40px;
     padding: 0;
-    background-color: #eef;
+    background-color: #333;
 }
 
 body, input, select {
@@ -14,8 +14,58 @@ input, select {
     line-height: 1.5;
 }
 
+a {
+    color: forestgreen;
+}
+
 h1 {
     border-bottom: 1px #ddd solid;
+}
+
+input[type=submit],
+input[type=button] {
+    border: 0;
+    border-radius: 5px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+input[type=submit] {
+    background-color: forestgreen;
+    color: white;
+}
+
+input[type=submit]:disabled {
+    color: darkgreen;
+}
+
+input[type=button] {
+    background-color: silver;
+    color: #333;
+}
+
+section {
+    margin: 0 auto;
+    padding: 20px;
+    width: 480px;
+    border-radius: 5px;
+    background-color: white;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+footer {
+    color: white;
+    margin: 40px 0;
+    text-align: center;
+}
+
+#steps {
+    margin-top: 40px;
+    padding: 0 0 0 20px;
+    list-style: decimal;
+}
+
+#steps img {
+    border: 1px silver solid;
 }
 
 #signed-in {
@@ -27,48 +77,16 @@ h1 {
     vertical-align: middle;
 }
 
-section {
-    margin: 0 auto;
-    padding: 20px;
-    width: 480px;
-    border-radius: 5px;
-    background-color: white;
-    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.5);
-}
-
-input[type=submit],
-input[type=button] {
-    border: 0;
-    border-bottom: 2px solid;
-    border-radius: 5px;
-}
-
-input[type=submit] {
-    background-color: forestgreen;
-    border-bottom-color: darkgreen;
-    color: white;
-}
-
-input[type=submit]:disabled {
-    color: darkgreen;
-}
-
-input[type=button] {
-    background-color: silver;
-    border-bottom-color: gray;
-    color: #333;
-}
-
 .message {
     margin: 20px auto;
     padding: 10px 20px;
     width: 480px;
-    border-bottom: 2px goldenrod solid;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
     border-radius: 5px;
     background-color: gold;
 }
 
-ul {
+#lists {
     padding-left: 10px;
     list-style: none;
 }

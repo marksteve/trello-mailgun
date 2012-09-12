@@ -46,6 +46,11 @@ class User(db.Model):
         return dict(kv_pairs)
 
 
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+
 @app.route('/setup', methods=['GET', 'POST'])
 def setup():
     # Get request token
