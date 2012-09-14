@@ -1,4 +1,4 @@
 # Trello-Mailgun
 
-Trello cards thru email using Mailgun mailboxes
+Add Trello cards through email by sending to a Mailgun mailbox and CC'ing board members
 
