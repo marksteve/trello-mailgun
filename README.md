@@ -4,5 +4,5 @@ Add Trello cards through email by sending to a Mailgun mailbox and CC'ing board 
 
 ## License
 
-marksteve.mit-license.org
+[MIT License](http://marksteve.mit-license.org)
 
